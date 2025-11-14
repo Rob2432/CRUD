@@ -1,14 +1,16 @@
+// src/pages/EditPlayer.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import supabase from "../supabaseClient";
 
-const EditPlayer = () => {
+function EditPlayer() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [player, setPlayer] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const positions = ["GK", "DEF", "MID", "FWD"];
 
-  // Fetch player by ID
   useEffect(() => {
     const fetchPlayer = async () => {
       const { data, error } = await supabase
@@ -17,79 +19,95 @@ const EditPlayer = () => {
         .eq("id", id)
         .single();
 
-      if (error) console.error(error);
-      else setPlayer(data);
-    };
+      if (error) {
+        console.error("Fetch player failed:", error.message);
+        alert("Player not found");
+      } else setPlayer(data);
 
+      setLoading(false);
+    };
     fetchPlayer();
   }, [id]);
 
-  // Handle update
-  const handleUpdate = async (e) => {
+  if (loading) return <p>Loading...</p>;
+  if (!player) return <p>Player not found.</p>;
+
+  const handleSave = async (e) => {
     e.preventDefault();
 
     const { error } = await supabase
       .from("players")
-      .update({
-        name: player.name,
-        position: player.position,
-      })
+      .update({ name: player.name, position: player.position })
       .eq("id", id);
 
-    if (error) console.error(error);
-    else navigate("/summary");
+    if (error) {
+      console.error("Update failed:", error.message);
+      alert("Failed to update player");
+    } else {
+      navigate("/summary");
+    }
   };
 
-  // Handle delete player
   const handleDelete = async () => {
     const { error } = await supabase
       .from("players")
       .delete()
       .eq("id", id);
 
-    if (error) console.error(error);
-    else navigate("/summary");
+    if (error) {
+      console.error("Delete failed:", error.message);
+      alert("Failed to delete player");
+    } else {
+      navigate("/summary");
+    }
   };
-
-  if (!player) return <p>Loading...</p>;
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Edit Player</h1>
+      <form onSubmit={handleSave}>
+        <label>
+          Name:
+          <input
+            type="text"
+            value={player.name}
+            onChange={(e) => setPlayer({ ...player, name: e.target.value })}
+          />
+        </label>
 
-      <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", maxWidth: "300px" }}>
-        <label>Player Name</label>
-        <input
-          type="text"
-          value={player.name}
-          onChange={(e) => setPlayer({ ...player, name: e.target.value })}
-        />
+        <div style={{ marginTop: "10px" }}>
+          <p>Select Position:</p>
+          {positions.map((pos) => (
+            <button
+              type="button"
+              key={pos}
+              onClick={() => setPlayer({ ...player, position: pos })}
+              style={{
+                margin: "5px",
+                backgroundColor: player.position === pos ? "lightgreen" : "white",
+              }}
+            >
+              {pos}
+            </button>
+          ))}
+        </div>
 
-        <label>Position</label>
-        <select
-          value={player.position}
-          onChange={(e) => setPlayer({ ...player, position: e.target.value })}
-        >
-          <option value="Goalkeeper">Goalkeeper</option>
-          <option value="Defender">Defender</option>
-          <option value="Midfielder">Midfielder</option>
-          <option value="Forward">Forward</option>
-        </select>
-
-        <button type="submit" style={{ marginTop: "10px" }}>
-          Save Changes
-        </button>
-
+        <button type="submit" style={{ marginTop: "10px" }}>Save Changes</button>
         <button
           type="button"
           onClick={handleDelete}
-          style={{ marginTop: "10px", backgroundColor: "red", color: "white" }}
+          style={{
+            marginTop: "10px",
+            marginLeft: "10px",
+            backgroundColor: "red",
+            color: "white",
+          }}
         >
           Delete Player
         </button>
       </form>
     </div>
   );
-};
+}
 
 export default EditPlayer;

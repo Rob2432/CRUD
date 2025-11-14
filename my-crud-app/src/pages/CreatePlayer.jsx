@@ -1,44 +1,48 @@
+// src/pages/CreatePlayer.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import supabase from "../supabaseClient";
 
-export default function CreatePlayer({ players, setPlayers }) {
+function CreatePlayer() {
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
   const navigate = useNavigate();
-
   const positions = ["GK", "DEF", "MID", "FWD"];
 
-  function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name || !position) {
+      alert("Please enter a name and select a position!");
+      return;
+    }
 
-    const newPlayer = {
-      id: crypto.randomUUID(),
-      name,
-      position,
-      created_at: new Date().toISOString(),
-    };
+    const { data, error } = await supabase
+      .from("players")
+      .insert([{ name, position, created_at: new Date().toISOString() }]);
 
-    setPlayers([...players, newPlayer]);
-
-    navigate("/summary");
-  }
+    if (error) {
+      console.error("Insert failed:", error.message);
+      alert("Failed to create player.");
+    } else {
+      navigate("/summary");
+    }
+  };
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Create New Player</h1>
-
+      <h1>Create Player</h1>
       <form onSubmit={handleSubmit}>
         <label>
-          Player Name:
+          Name:
           <input
             type="text"
             value={name}
-            placeholder="Enter name"
             onChange={(e) => setName(e.target.value)}
+            placeholder="Player Name"
           />
         </label>
 
-        <div>
+        <div style={{ marginTop: "10px" }}>
           <p>Select Position:</p>
           {positions.map((pos) => (
             <button
@@ -55,8 +59,10 @@ export default function CreatePlayer({ players, setPlayers }) {
           ))}
         </div>
 
-        <button type="submit">Create Player</button>
+        <button type="submit" style={{ marginTop: "10px" }}>Create Player</button>
       </form>
     </div>
   );
 }
+
+export default CreatePlayer;

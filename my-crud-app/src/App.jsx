@@ -1,11 +1,10 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-
 import CreatePlayer from "./pages/CreatePlayer";
 import PlayerSummary from "./pages/PlayerSummary";
 import EditPlayer from "./pages/EditPlayer";
+import supabase from "./supabaseClient";
 
-function App() {
+export default function App() {
   return (
     <Router>
       <nav style={{ padding: "10px", borderBottom: "1px solid gray" }}>
@@ -31,5 +30,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;

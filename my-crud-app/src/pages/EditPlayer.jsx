@@ -1,29 +1,20 @@
-// src/pages/EditPlayer.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import supabase from "../supabaseClient";
 
-function EditPlayer() {
+export default function EditPlayer() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const positions = ["GK", "DEF", "MID", "FWD"];
+  const allSkills = ["Passing", "Shooting", "Dribbling", "Defense"];
 
   useEffect(() => {
     const fetchPlayer = async () => {
-      const { data, error } = await supabase
-        .from("players")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        console.error("Fetch player failed:", error.message);
-        alert("Player not found");
-      } else setPlayer(data);
-
+      const { data, error } = await supabase.from("players").select("*").eq("id", id).single();
+      if (error) alert(error.message);
+      else setPlayer(data);
       setLoading(false);
     };
     fetchPlayer();
@@ -32,82 +23,87 @@ function EditPlayer() {
   if (loading) return <p>Loading...</p>;
   if (!player) return <p>Player not found.</p>;
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-
+  const handleSave = async () => {
     const { error } = await supabase
       .from("players")
-      .update({ name: player.name, position: player.position })
+      .update({
+        name: player.name,
+        position: player.position,
+        rating: player.rating,
+        skills: player.skills,
+        avatar_url: player.avatar_url,
+      })
       .eq("id", id);
 
-    if (error) {
-      console.error("Update failed:", error.message);
-      alert("Failed to update player");
-    } else {
-      navigate("/summary");
-    }
+    if (error) alert(error.message);
+    else navigate("/summary");
   };
 
   const handleDelete = async () => {
-    const { error } = await supabase
-      .from("players")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("players").delete().eq("id", id);
+    if (error) alert(error.message);
+    else navigate("/summary");
+  };
 
-    if (error) {
-      console.error("Delete failed:", error.message);
-      alert("Failed to delete player");
-    } else {
-      navigate("/summary");
-    }
+  const toggleSkill = (skill) => {
+    setPlayer({
+      ...player,
+      skills: player.skills.includes(skill)
+        ? player.skills.filter(s => s !== skill)
+        : [...player.skills, skill],
+    });
   };
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Edit Player</h1>
-      <form onSubmit={handleSave}>
-        <label>
-          Name:
-          <input
-            type="text"
-            value={player.name}
-            onChange={(e) => setPlayer({ ...player, name: e.target.value })}
-          />
-        </label>
+      <label>Name: <input value={player.name} onChange={e => setPlayer({ ...player, name: e.target.value })} /></label>
 
-        <div style={{ marginTop: "10px" }}>
-          <p>Select Position:</p>
-          {positions.map((pos) => (
-            <button
-              type="button"
-              key={pos}
-              onClick={() => setPlayer({ ...player, position: pos })}
-              style={{
-                margin: "5px",
-                backgroundColor: player.position === pos ? "lightgreen" : "white",
-              }}
-            >
-              {pos}
-            </button>
-          ))}
-        </div>
+      <div>
+        <p>Position:</p>
+        {positions.map(pos => (
+          <button
+            key={pos}
+            type="button"
+            onClick={() => setPlayer({ ...player, position: pos })}
+            style={{ margin: "5px", backgroundColor: player.position === pos ? "lightgreen" : "white" }}
+          >
+            {pos}
+          </button>
+        ))}
+      </div>
 
-        <button type="submit" style={{ marginTop: "10px" }}>Save Changes</button>
-        <button
-          type="button"
-          onClick={handleDelete}
-          style={{
-            marginTop: "10px",
-            marginLeft: "10px",
-            backgroundColor: "red",
-            color: "white",
-          }}
-        >
-          Delete Player
-        </button>
-      </form>
+      <div>
+        <label>Rating: {player.rating}</label>
+        <input
+          type="range"
+          min="1"
+          max="100"
+          value={player.rating}
+          onChange={e => setPlayer({ ...player, rating: Number(e.target.value) })}
+        />
+      </div>
+
+      <div>
+        <p>Skills:</p>
+        {allSkills.map(skill => (
+          <button
+            key={skill}
+            type="button"
+            onClick={() => toggleSkill(skill)}
+            style={{ margin: "5px", backgroundColor: player.skills.includes(skill) ? "lightgreen" : "white" }}
+          >
+            {skill}
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <label>Avatar URL: <input value={player.avatar_url} onChange={e => setPlayer({ ...player, avatar_url: e.target.value })} /></label>
+      </div>
+
+      <button onClick={handleSave}>Save Changes</button>
+      <button onClick={handleDelete} style={{ marginLeft: "10px", backgroundColor: "red", color: "white" }}>Delete Player</button>
     </div>
   );
 }
-
-export default EditPlayer;

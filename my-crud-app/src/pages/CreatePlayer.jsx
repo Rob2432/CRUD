@@ -1,22 +1,26 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function CreatePlayer() {
+export default function CreatePlayer({ players, setPlayers }) {
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
+  const navigate = useNavigate();
 
-  // Positions = clickable attributes
   const positions = ["GK", "DEF", "MID", "FWD"];
 
   function handleSubmit(e) {
     e.preventDefault();
 
     const newPlayer = {
+      id: crypto.randomUUID(),
       name,
       position,
+      created_at: new Date().toISOString(),
     };
 
-    console.log("New player created:", newPlayer);
-    // Later you'll send this to Supabase
+    setPlayers([...players, newPlayer]);
+
+    navigate("/summary");
   }
 
   return (
@@ -24,20 +28,16 @@ export default function CreatePlayer() {
       <h1>Create New Player</h1>
 
       <form onSubmit={handleSubmit}>
-        
-        {/* Name input */}
         <label>
           Player Name:
           <input
             type="text"
-            placeholder="Enter name"
             value={name}
+            placeholder="Enter name"
             onChange={(e) => setName(e.target.value)}
-            style={{ display: "block", margin: "10px 0" }}
           />
         </label>
 
-        {/* Clickable position buttons */}
         <div>
           <p>Select Position:</p>
           {positions.map((pos) => (
@@ -47,10 +47,7 @@ export default function CreatePlayer() {
               onClick={() => setPosition(pos)}
               style={{
                 margin: "5px",
-                padding: "10px",
                 backgroundColor: position === pos ? "lightgreen" : "white",
-                border: "1px solid black",
-                cursor: "pointer",
               }}
             >
               {pos}
@@ -58,9 +55,7 @@ export default function CreatePlayer() {
           ))}
         </div>
 
-        <button type="submit" style={{ marginTop: "20px" }}>
-          Create Player
-        </button>
+        <button type="submit">Create Player</button>
       </form>
     </div>
   );
